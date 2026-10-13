@@ -23,12 +23,10 @@ if "current_phone" not in st.session_state:
 if "current_name" not in st.session_state:
     st.session_state.current_name = ""
 
-# Shared Global Database across connected users (Pre-populated with sample contacts like Shiyan and Jose)
+# Shared Global Database across connected users
 if "global_users" not in st.session_state:
     st.session_state.global_users = {
-        "9999999999": {"name": "Nexus Support", "pin": "0000", "contacts": ["1111111111", "2222222222"]},
-        "1111111111": {"name": "Shiyan", "pin": "1234", "contacts": []},
-        "2222222222": {"name": "Jose", "pin": "1234", "contacts": []}
+        "9999999999": {"name": "Nexus Support", "pin": "0000", "contacts": []}
     }
 
 # Shared Global Message Store
@@ -61,7 +59,7 @@ if not st.session_state.logged_in:
         # --- LOGIN TAB ---
         with auth_tab1:
             st.subheader("Sign In")
-            login_phone = st.text_input("Mobile Number", placeholder="e.g., 1111111111", key="login_phone_box").strip()
+            login_phone = st.text_input("Mobile Number", placeholder="e.g., 1234567890", key="login_phone_box").strip()
             login_pin = st.text_input("Security PIN", type="password", placeholder="Enter 4-digit PIN", key="login_pin_box").strip()
             
             if st.button("Log In to NexusChat", use_container_width=True):
@@ -94,7 +92,7 @@ if not st.session_state.logged_in:
                     st.session_state.global_users[reg_phone] = {
                         "name": reg_name,
                         "pin": reg_pin,
-                        "contacts": ["1111111111", "2222222222"] # Auto-add Shiyan & Jose for quick testing
+                        "contacts": []
                     }
                     st.session_state.logged_in = True
                     st.session_state.current_phone = reg_phone
@@ -113,7 +111,6 @@ if st.session_state.theme_mode == "Dark":
     bg_bubble_bot = "#202c33"
     text_color = "#e9edef"
     border_color = "#222d34"
-    active_row = "#2a3942"
 else:
     bg_main = "#f0f2f5"
     bg_sidebar = "#ffffff"
@@ -121,7 +118,6 @@ else:
     bg_bubble_bot = "#ffffff"
     text_color = "#111b21"
     border_color = "#e9edef"
-    active_row = "#f0f2f5"
 
 st.markdown(f"""
     <style>
@@ -181,7 +177,7 @@ with st.sidebar:
             
     st.markdown("---")
     st.subheader("➕ Add Contact")
-    search_number = st.text_input("Mobile Number:", placeholder="e.g., 1111111111", label_visibility="collapsed").strip()
+    search_number = st.text_input("Mobile Number:", placeholder="e.g., 1234567890", label_visibility="collapsed").strip()
     
     if st.button("Add to Chat List", use_container_width=True):
         if search_number == st.session_state.current_phone:
@@ -201,12 +197,12 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### Recent Conversations")
     
-    # WhatsApp Style Contact Rows
-    ai_active_style = "border-left: 4px solid #00a884; background-color: " + active_row + ";" if st.session_state.active_chat_phone == "AI_ASSISTANT" else ""
-    if st.button("🤖 Nexus AI Assistant\n*Tap to chat with AI*", key="chat_ai", use_container_width=True):
+    # AI Assistant Row
+    if st.button("🤖 Nexus AI Assistant\n*Stealth Assistant*", key="chat_ai", use_container_width=True):
         st.session_state.active_chat_phone = "AI_ASSISTANT"
         st.rerun()
         
+    # Dynamic Contact Rows (Appears only when users are added)
     my_contacts = st.session_state.global_users[st.session_state.current_phone]["contacts"]
     for contact_phone in my_contacts:
         if contact_phone in st.session_state.global_users:
