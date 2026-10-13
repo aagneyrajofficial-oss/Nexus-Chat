@@ -45,7 +45,7 @@ init_db()
 def get_db_connection():
     return sqlite3.connect("nexuschat.db", check_same_thread=False)
 
-# ----------------- SESSION STATE SETUP -----------------
+# ----------------- SESSION STATE & PERSISTENCE SETUP -----------------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "current_phone" not in st.session_state:
@@ -56,6 +56,19 @@ if "theme_mode" not in st.session_state:
     st.session_state.theme_mode = "Dark"
 if "active_chat_phone" not in st.session_state:
     st.session_state.active_chat_phone = "AI_ASSISTANT"
+
+# Recover session from query parameters if page is refreshed
+if not st.session_state.logged_in and "session_phone" in st.query_params:
+    saved_phone = st.query_params["session_phone"]
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM users WHERE phone = ?", (saved_phone,))
+    res = cursor.fetchone()
+    conn.close()
+    if res:
+        st.session_state.logged_in = True
+        st.session_state.current_phone = saved_phone
+        st.session_state.current_name = res[0]
 
 # Hardcoded Local Intelligence Database for AI
 LOCAL_QA = {
@@ -94,6 +107,7 @@ if not st.session_state.logged_in:
                         st.session_state.logged_in = True
                         st.session_state.current_phone = login_phone
                         st.session_state.current_name = db_name
+                        st.query_params["session_phone"] = login_phone
                         st.success(f"Welcome back, {db_name}!")
                         time.sleep(0.6)
                         st.rerun()
@@ -130,6 +144,7 @@ if not st.session_state.logged_in:
                         st.session_state.logged_in = True
                         st.session_state.current_phone = reg_phone
                         st.session_state.current_name = reg_name
+                        st.query_params["session_phone"] = reg_phone
                         st.success(f"Account created! Welcome, {reg_name}!")
                         time.sleep(0.6)
                         st.rerun()
@@ -205,6 +220,8 @@ with st.sidebar:
         st.session_state.theme_mode = st.selectbox("Theme", ["Dark", "Light"], index=0 if st.session_state.theme_mode == "Dark" else 1, label_visibility="collapsed")
     with col_s2:
         if st.button("🔒 Log Out", use_container_width=True):
+            if "session_phone" in st.query_params:
+                del st.query_params["session_phone"]
             st.session_state.logged_in = False
             st.rerun()
             
@@ -246,12 +263,10 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### Recent Conversations")
     
-    # AI Assistant Row
     if st.button("🤖 Nexus AI Assistant\n*Stealth Assistant*", key="chat_ai", use_container_width=True):
         st.session_state.active_chat_phone = "AI_ASSISTANT"
         st.rerun()
         
-    # Load Contacts from DB
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT contacts FROM users WHERE phone = ?", (st.session_state.current_phone,))
@@ -283,7 +298,6 @@ else:
     conn.close()
     active_chat_title = t_res[0] if t_res else "Chat"
 
-# Main Header
 st.markdown(f"""
     <div class="nexus-header">
         <div>
@@ -293,7 +307,6 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Main Navigation Tabs
 tab_chat, tab_calls, tab_status = st.tabs(["💬 Chat & Stealth AI", "📞 HD Voice & Video Calls", "🌟 Status Feed"])
 
 # --- TAB 1: REAL-TIME CHAT & MESSAGING ---
