@@ -91,7 +91,7 @@ if not st.session_state.logged_in:
         # --- LOGIN TAB ---
         with auth_tab1:
             st.subheader("Sign In")
-            login_phone = st.text_input("Mobile Number", placeholder="e.g., 7012233906", key="login_phone_box").strip()
+            login_phone = st.text_input("Mobile Number", placeholder="e.g., 1111111111", key="login_phone_box").strip()
             login_pin = st.text_input("Security PIN", type="password", placeholder="Enter 4-digit PIN", key="login_pin_box").strip()
             
             if st.button("Log In to NexusChat", use_container_width=True):
@@ -119,8 +119,8 @@ if not st.session_state.logged_in:
         # --- CREATE ACCOUNT TAB ---
         with auth_tab2:
             st.subheader("Register New Account")
-            reg_name = st.text_input("Your Full Name", placeholder="e.g., Aagney", key="reg_name_box").strip()
-            reg_phone = st.text_input("Mobile Number", placeholder="e.g., 7012233906", key="reg_phone_box").strip()
+            reg_name = st.text_input("Your Full Name", placeholder="e.g., John Doe", key="reg_name_box").strip()
+            reg_phone = st.text_input("Mobile Number", placeholder="e.g., 1111111111", key="reg_phone_box").strip()
             reg_pin = st.text_input("Create Security PIN", type="password", placeholder="4-digit PIN", key="reg_pin_box").strip()
             
             if st.button("Create Account & Start", use_container_width=True):
@@ -227,7 +227,7 @@ with st.sidebar:
             
     st.markdown("---")
     st.subheader("➕ Add Contact")
-    search_number = st.text_input("Mobile Number:", placeholder="e.g., 7293332211", label_visibility="collapsed").strip()
+    search_number = st.text_input("Mobile Number:", placeholder="e.g., 1111111111", label_visibility="collapsed").strip()
     
     if st.button("Add to Chat List", use_container_width=True):
         if search_number == st.session_state.current_phone:
