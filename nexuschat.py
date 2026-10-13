@@ -23,11 +23,12 @@ if "current_phone" not in st.session_state:
 if "current_name" not in st.session_state:
     st.session_state.current_name = ""
 
-# Shared Global Database across connected users
+# Shared Global Database across connected users (Pre-populated with sample contacts like Shiyan and Jose)
 if "global_users" not in st.session_state:
     st.session_state.global_users = {
-        "9999999999": {"name": "Nexus Support", "pin": "0000", "contacts": []},
-        "1234567890": {"name": "Alex", "pin": "1234", "contacts": []}
+        "9999999999": {"name": "Nexus Support", "pin": "0000", "contacts": ["1111111111", "2222222222"]},
+        "1111111111": {"name": "Shiyan", "pin": "1234", "contacts": []},
+        "2222222222": {"name": "Jose", "pin": "1234", "contacts": []}
     }
 
 # Shared Global Message Store
@@ -60,7 +61,7 @@ if not st.session_state.logged_in:
         # --- LOGIN TAB ---
         with auth_tab1:
             st.subheader("Sign In")
-            login_phone = st.text_input("Mobile Number", placeholder="e.g., 1234567890", key="login_phone_box").strip()
+            login_phone = st.text_input("Mobile Number", placeholder="e.g., 1111111111", key="login_phone_box").strip()
             login_pin = st.text_input("Security PIN", type="password", placeholder="Enter 4-digit PIN", key="login_pin_box").strip()
             
             if st.button("Log In to NexusChat", use_container_width=True):
@@ -93,7 +94,7 @@ if not st.session_state.logged_in:
                     st.session_state.global_users[reg_phone] = {
                         "name": reg_name,
                         "pin": reg_pin,
-                        "contacts": []
+                        "contacts": ["1111111111", "2222222222"] # Auto-add Shiyan & Jose for quick testing
                     }
                     st.session_state.logged_in = True
                     st.session_state.current_phone = reg_phone
@@ -106,19 +107,21 @@ if not st.session_state.logged_in:
 
 # ----------------- MAIN APP STYLING & INTERFACE -----------------
 if st.session_state.theme_mode == "Dark":
-    bg_main = "#090d16"
-    bg_sidebar = "#111827"
-    bg_bubble_user = "#4f46e5"
-    bg_bubble_bot = "#1f2937"
-    text_color = "#f3f4f6"
-    border_color = "#374151"
+    bg_main = "#0b141a"
+    bg_sidebar = "#111b21"
+    bg_bubble_user = "#005c4b"
+    bg_bubble_bot = "#202c33"
+    text_color = "#e9edef"
+    border_color = "#222d34"
+    active_row = "#2a3942"
 else:
-    bg_main = "#f8fafc"
+    bg_main = "#f0f2f5"
     bg_sidebar = "#ffffff"
-    bg_bubble_user = "#6366f1"
-    bg_bubble_bot = "#e2e8f0"
-    text_color = "#0f172a"
-    border_color = "#cbd5e1"
+    bg_bubble_user = "#d9fdd3"
+    bg_bubble_bot = "#ffffff"
+    text_color = "#111b21"
+    border_color = "#e9edef"
+    active_row = "#f0f2f5"
 
 st.markdown(f"""
     <style>
@@ -141,69 +144,79 @@ st.markdown(f"""
     }}
     .user-msg {{
         background-color: {bg_bubble_user};
-        color: #ffffff;
+        color: {text_color};
         padding: 12px 16px;
-        border-radius: 16px 16px 4px 16px;
+        border-radius: 12px 12px 2px 12px;
         margin-left: auto;
         max-width: 75%;
         margin-bottom: 10px;
+        box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
     }}
     .bot-msg {{
         background-color: {bg_bubble_bot};
         color: {text_color};
         padding: 12px 16px;
-        border-radius: 16px 16px 16px 4px;
+        border-radius: 12px 12px 12px 2px;
         margin-right: auto;
         max-width: 75%;
         margin-bottom: 10px;
         border: 1px solid {border_color};
+        box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
     }}
     </style>
 """, unsafe_allow_html=True)
 
-# ----------------- SIDEBAR CONTROLS -----------------
+# ----------------- SIDEBAR CONTROLS (WHATSAPP STYLE CHAT LIST) -----------------
 with st.sidebar:
-    st.title("⚡ NexusChat Hub")
-    st.markdown(f"👤 **{st.session_state.current_name}**")
-    st.markdown(f"📞 `{st.session_state.current_phone}`")
+    st.title("💬 Chats")
+    st.markdown(f"👤 **{st.session_state.current_name}** (`{st.session_state.current_phone}`)")
     
-    if st.button("🔒 Log Out", use_container_width=True):
-        st.session_state.logged_in = False
-        st.rerun()
-        
+    col_s1, col_s2 = st.columns(2)
+    with col_s1:
+        st.session_state.theme_mode = st.selectbox("Theme", ["Dark", "Light"], index=0 if st.session_state.theme_mode == "Dark" else 1, label_visibility="collapsed")
+    with col_s2:
+        if st.button("🔒 Log Out", use_container_width=True):
+            st.session_state.logged_in = False
+            st.rerun()
+            
     st.markdown("---")
-    st.session_state.theme_mode = st.selectbox("🎨 Theme Mode:", ["Dark", "Light"], index=0 if st.session_state.theme_mode == "Dark" else 1)
+    st.subheader("➕ Add Contact")
+    search_number = st.text_input("Mobile Number:", placeholder="e.g., 1111111111", label_visibility="collapsed").strip()
     
-    st.markdown("---")
-    st.subheader("➕ Add Account / Friend")
-    search_number = st.text_input("Enter Friend's Mobile Number:", placeholder="e.g., 1234567890").strip()
-    
-    if st.button("Search & Add Account", use_container_width=True):
+    if st.button("Add to Chat List", use_container_width=True):
         if search_number == st.session_state.current_phone:
-            st.warning("You cannot add your own mobile number.")
+            st.warning("Cannot add your own number.")
         elif search_number in st.session_state.global_users:
             friend_contacts = st.session_state.global_users[st.session_state.current_phone]["contacts"]
             if search_number not in friend_contacts:
                 friend_contacts.append(search_number)
-                st.success(f"Added **{st.session_state.global_users[search_number]['name']}** successfully!")
+                st.success(f"Added **{st.session_state.global_users[search_number]['name']}**!")
                 time.sleep(0.4)
                 st.rerun()
             else:
-                st.info("User is already in your contact list.")
+                st.info("Already in contacts.")
         else:
-            st.error("No registered account found matching that mobile number.")
+            st.error("User not found.")
 
     st.markdown("---")
-    st.subheader("💬 Conversations")
+    st.markdown("### Recent Conversations")
     
-    if st.button("🤖 Nexus AI Assistant", use_container_width=True):
+    # WhatsApp Style Contact Rows
+    ai_active_style = "border-left: 4px solid #00a884; background-color: " + active_row + ";" if st.session_state.active_chat_phone == "AI_ASSISTANT" else ""
+    if st.button("🤖 Nexus AI Assistant\n*Tap to chat with AI*", key="chat_ai", use_container_width=True):
         st.session_state.active_chat_phone = "AI_ASSISTANT"
+        st.rerun()
         
     my_contacts = st.session_state.global_users[st.session_state.current_phone]["contacts"]
     for contact_phone in my_contacts:
-        contact_name = st.session_state.global_users[contact_phone]["name"]
-        if st.button(f"👤 {contact_name} ({contact_phone})", key=f"contact_btn_{contact_phone}", use_container_width=True):
-            st.session_state.active_chat_phone = contact_phone
+        if contact_phone in st.session_state.global_users:
+            contact_name = st.session_state.global_users[contact_phone]["name"]
+            is_active = st.session_state.active_chat_phone == contact_phone
+            btn_label = f"🟢 {contact_name}\n📞 {contact_phone}" if is_active else f"👤 {contact_name}\n📞 {contact_phone}"
+            
+            if st.button(btn_label, key=f"wa_chat_{contact_phone}", use_container_width=True):
+                st.session_state.active_chat_phone = contact_phone
+                st.rerun()
 
 # ----------------- DETERMINE ACTIVE CHAT TITLE -----------------
 if st.session_state.active_chat_phone == "AI_ASSISTANT":
@@ -216,11 +229,12 @@ st.markdown(f"""
     <div class="nexus-header">
         <div>
             <h2 style="margin: 0; padding: 0;">{active_chat_title}</h2>
-            <span style="font-size: 0.85em; color: #10b981;">● Real-Time Encrypted Relay Active</span>
+            <span style="font-size: 0.85em; color: #00a884;">● End-to-End Encrypted Chat</span>
         </div>
     </div>
 """, unsafe_allow_html=True)
 
+# Main Navigation Tabs
 tab_chat, tab_calls, tab_status = st.tabs(["💬 Chat & Stealth AI", "📞 HD Voice & Video Calls", "🌟 Status Feed"])
 
 # --- TAB 1: REAL-TIME CHAT & MESSAGING ---
@@ -238,7 +252,7 @@ with tab_chat:
             else:
                 st.markdown(f'<div class="bot-msg"><b>Nexus AI:</b><br>{msg["content"]}</div>', unsafe_allow_html=True)
 
-        if user_prompt := st.chat_input("Ask a question..."):
+        if user_prompt := st.chat_input("Type a message..."):
             ai_history.append({"role": "user", "content": user_prompt})
             
             clean_input = user_prompt.strip().lower()
@@ -264,7 +278,7 @@ with tab_chat:
                         except Exception as err:
                             final_answer = f"Temporary error retrieving response: {str(err)}"
                     else:
-                        final_answer = "I don't have that hardcoded locally, and the Gemini API key is not configured."
+                        final_answer = "API key not configured."
                         
             ai_history.append({"role": "assistant", "content": final_answer})
             st.rerun()
@@ -273,7 +287,7 @@ with tab_chat:
         friend_phone = st.session_state.active_chat_phone
         friend_name = st.session_state.global_users[friend_phone]["name"]
         
-        st.write(f"Direct encrypted messaging with **{friend_name}** (`{friend_phone}`)")
+        st.write(f"Direct messaging with **{friend_name}** (`{friend_phone}`)")
         
         chat_room_key = tuple(sorted([st.session_state.current_phone, friend_phone]))
         if chat_room_key not in st.session_state.global_messages:
@@ -287,7 +301,7 @@ with tab_chat:
             else:
                 st.markdown(f'<div class="bot-msg"><b>{friend_name} ({msg["time"]}):</b><br>{msg["text"]}</div>', unsafe_allow_html=True)
 
-        if peer_prompt := st.chat_input(f"Type a message to {friend_name}..."):
+        if peer_prompt := st.chat_input(f"Message {friend_name}..."):
             timestamp = datetime.now().strftime("%H:%M")
             room_messages.append({
                 "sender": st.session_state.current_phone,
@@ -299,8 +313,6 @@ with tab_chat:
 # --- TAB 2: VOICE & VIDEO CALLS ---
 with tab_calls:
     st.subheader("📞 Direct Voice & Video Call Room")
-    st.write("Type a shared room name below to open an encrypted live call channel with your contacts.")
-    
     room_code = st.text_input("Enter Meeting Room Code:", "Nexus-Secure-Call-Room").strip()
     if room_code:
         call_url = f"https://meet.jit.si/{room_code}#config.prejoinPageEnabled=false"
@@ -308,10 +320,8 @@ with tab_calls:
 
 # --- TAB 3: STATUS FEED ---
 with tab_status:
-    st.subheader("🌟 Network Status Feed")
-    st.markdown(f"* **{st.session_state.current_name}**: *'Online and ready for messaging.'* — Just now")
-    
-    st.markdown("---")
+    st.subheader("🌟 Status Feed")
+    st.markdown(f"* **{st.session_state.current_name}**: *'Online on NexusChat.'* — Just now")
     new_status = st.text_input("Post a status update:")
     if st.button("Broadcast Status"):
         if new_status:
